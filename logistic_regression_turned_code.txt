@@ -1,0 +1,283 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+df = pd.read_csv('/content/sample_data/Predict Student Dropout and Academic Success.csv', sep=';')
+df.columns = df.columns.str.strip()
+
+print(df.head())
+df.info()
+df['Target'].value_counts()
+
+sns.countplot(x='Target', data=df)
+plt.title('Student Outcome Distribution')
+plt.show()
+
+sns.boxplot(x='Target', y='Curricular units 1st sem (grade)', data=df)
+plt.show()
+
+sns.countplot(x='Tuition fees up to date', hue='Target', data=df)
+plt.show()
+
+y = (df['Target'] == 'Dropout').astype(int)
+X = df.drop(columns=['Target'])
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, stratify=y, random_state=42
+)
+
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+
+cat_cols = [
+    'Marital status', 'Application mode', 'Course',
+    'Previous qualification', 'Nacionality',
+    "Mother's qualification", "Father's qualification",
+    "Mother's occupation", "Father's occupation",
+    'Daytime/evening attendance'
+]
+num_cols = [col for col in X.columns if col not in cat_cols]
+
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
+
+preprocessor = ColumnTransformer(transformers=[
+    ('cat', OneHotEncoder(handle_unknown='ignore'), cat_cols),
+    ('num', StandardScaler(), num_cols)
+])
+
+
+pipeline = Pipeline(steps=[
+    ('preprocessor', preprocessor),
+    ('classifier', LogisticRegression(
+        C=1.0,
+        solver='lbfgs',
+        max_iter=1000,
+        class_weight='balanced',
+        random_state=42
+    ))
+])
+
+pipeline.fit(X_train, y_train)
+print("Logistic Regression, Training done!")
+
+
+import joblib
+
+threshold = 0.3
+print(f"Threshold yang dipakai: {threshold}")
+
+y_prob = pipeline.predict_proba(X_test)[:, 1]
+y_pred = (y_prob >= threshold).astype(int)
+
+
+from sklearn.metrics import (
+    accuracy_score, precision_score,
+    recall_score, roc_auc_score
+)
+
+a   = accuracy_score(y_test, y_pred)
+p   = precision_score(y_test, y_pred)
+r   = recall_score(y_test, y_pred)
+roc = roc_auc_score(y_test, y_prob)
+
+print(f"Accuracy  : {a:.4f}")
+print(f"Precision : {p:.4f}")
+print(f"Recall    : {r:.4f}")
+print(f"ROC_AUC   : {roc:.4f}")
+
+plt.figure(figsize=(7, 5))
+plt.bar(['Accuracy', 'Precision', 'Recall', 'ROC_AUC'],
+        [a, p, r, roc], color='steelblue')
+plt.ylim(0, 1.05)
+plt.title('Logistic Regression Metrics')
+plt.ylabel('Score')
+for i, v in enumerate([a, p, r, roc]):
+    plt.text(i, v + 0.01, f'{v:.3f}', ha='center', fontsize=10)
+plt.tight_layout()
+plt.show()
+
+from sklearn.metrics import RocCurveDisplay
+
+RocCurveDisplay.from_predictions(y_test, y_prob)
+plt.title(f'ROC Curve — Logistic Regression (AUC = {roc:.3f})')
+plt.show()
+
+from sklearn.metrics import confusion_matrix
+
+cm = confusion_matrix(y_test, y_pred)
+
+sns.heatmap(
+    cm,
+    annot=True,
+    fmt='.0f',
+    cmap='Blues',
+    xticklabels=['Non-Dropout', 'Dropout'],
+    yticklabels=['Non-Dropout', 'Dropout']
+)
+plt.title('Confusion Matrix — Logistic Regression')
+plt.xlabel('Prediction')
+plt.ylabel('Actual')
+plt.tight_layout()
+plt.show()
+
+TN = cm[0, 0]
+FP = cm[0, 1]
+FN = cm[1, 0]
+TP = cm[1, 1]
+
+print("=" * 45)
+print("  Confusion Matrix Analysis")
+print("=" * 45)
+print(f"  True Positive  (TP) : {TP}")
+print(f"    - Mahasiswa benar-benar Dropout dan diprediksi sistem Dropout")
+print(f"\n  False Positive (FP) : {FP}")
+print(f"    - Mahasiswa tidak Dropout tapi diprediksi Dropout")
+print(f"\n  True Negative  (TN) : {TN}")
+print(f"    - Mahasiswa benar-benar tidak Dropout dan diprediksi Non-Dropout")
+print(f"\n  False Negative (FN) : {FN}")
+print(f"    - Mahasiswa Dropout tapi tidak terdeteksi (paling fatal!)")
+print("=" * 45)
+print(f"\n  Precision = TP / (TP+FP) = {TP}/{TP+FP} = {TP/(TP+FP):.4f}")
+print(f"  Recall    = TP / (TP+FN) = {TP}/{TP+FN} = {TP/(TP+FN):.4f}")
+print(f"\n  - Model berhasil mendeteksi {TP} dari {TP+FN} mahasiswa yang dropout")
+print(f"  → Hanya {FN} mahasiswa dropout yang tidak terdeteksi")
+
+
+coefs_all  = pipeline.named_steps['classifier'].coef_[0]
+n_cat      = len(pipeline
+                 .named_steps['preprocessor']
+                 .named_transformers_['cat']
+                 .get_feature_names_out(cat_cols))
+
+
+coefs_num = coefs_all[n_cat:]
+
+importance_df = pd.DataFrame({
+    'Fitur'     : num_cols,
+    'Koefisien' : coefs_num
+}).sort_values('Koefisien', key=abs, ascending=False)
+
+colors = ['#e74c3c' if c > 0 else '#2ecc71' for c in importance_df['Koefisien']]
+
+plt.figure(figsize=(10, 7))
+plt.barh(importance_df['Fitur'], importance_df['Koefisien'],
+         color=colors, edgecolor='black')
+plt.axvline(0, color='black', linewidth=0.8)
+plt.title('Feature Importance — Logistic Regression\n'
+          'Merah = tambah risiko dropout  |  Hijau = kurangi risiko')
+plt.xlabel('Koefisien')
+plt.gca().invert_yaxis()
+plt.tight_layout()
+plt.show()
+
+import warnings
+warnings.filterwarnings('ignore')
+
+results = {}
+
+for name, mdl in [('Logistic Regression', pipeline)]:
+    prob  = mdl.predict_proba(X_test)[:, 1]
+    pred  = (prob >= threshold).astype(int)
+    results[name] = {
+        'Accuracy' : accuracy_score(y_test, pred),
+        'Precision': precision_score(y_test, pred),
+        'Recall'   : recall_score(y_test, pred),
+        'ROC-AUC'  : roc_auc_score(y_test, prob)
+    }
+
+comparison_df = pd.DataFrame(results).T
+print("\nHasil Evaluasi Model (threshold = 0.3):")
+print(comparison_df.round(4).to_string())
+
+comparison_df.plot(kind='bar', figsize=(8, 6), colormap='Set2',
+                   edgecolor='black', ylim=(0, 1.05))
+plt.title('Metrik Evaluasi: Logistic Regression', fontsize=12)
+plt.xlabel('Model')
+plt.ylabel('Score')
+plt.xticks(rotation=0)
+plt.legend(loc='lower right')
+plt.tight_layout()
+plt.show()
+
+joblib.dump(pipeline, 'logistic_regression_pipeline.joblib')
+
+#----------------------------------------------------------------------
+
+from sklearn.model_selection import GridSearchCV
+
+param_grid = {
+    'classifier__C': [0.01, 0.1, 1.0, 10.0, 100.0],
+    'classifier__solver': ['lbfgs', 'liblinear'],
+    'classifier__class_weight': ['balanced', None]
+}
+
+print("Memulai proses parameter tuning tunggu sebentar...")
+grid_search = GridSearchCV(
+    estimator=pipeline,
+    param_grid=param_grid,
+    cv=5,
+    scoring='recall',
+    n_jobs=-1
+)
+
+
+grid_search.fit(X_train, y_train)
+
+print("\n--- Tuning done! ---")
+
+print("Parameter Terbaik:")
+for param, value in grid_search.best_params_.items():
+    print(f" - {param.replace('classifier__', '')}: {value}")
+
+print(f"\nSkor Recall Terbaik (saat training): {grid_search.best_score_:.4f}")
+
+best_pipeline = grid_search.best_estimator_
+import joblib
+joblib.dump(best_pipeline, 'logistic_regression_tuned.joblib')
+
+#----------------------------------------------------------------------
+
+
+threshold = 0.3
+
+y_prob_tuned = best_pipeline.predict_proba(X_test)[:, 1]
+
+y_pred_tuned = (y_prob_tuned >= threshold).astype(int)
+
+from sklearn.metrics import accuracy_score, precision_score, recall_score, roc_auc_score, confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+a_tuned = accuracy_score(y_test, y_pred_tuned)
+p_tuned = precision_score(y_test, y_pred_tuned)
+r_tuned = recall_score(y_test, y_pred_tuned)
+roc_tuned = roc_auc_score(y_test, y_prob_tuned)
+
+print("=" * 45)
+print("  RAPOR MODEL SETELAH TUNING (Versi Baru)")
+print("=" * 45)
+print(f" Accuracy  : {a_tuned:.4f}")
+print(f" Precision : {p_tuned:.4f}")
+print(f" Recall    : {r_tuned:.4f}")
+print(f" ROC_AUC   : {roc_tuned:.4f}\n")
+
+cm_tuned = confusion_matrix(y_test, y_pred_tuned)
+plt.figure(figsize=(6, 4))
+sns.heatmap(
+    cm_tuned, annot=True, fmt='.0f', cmap='Greens',
+    xticklabels=['Non-Dropout', 'Dropout'],
+    yticklabels=['Non-Dropout', 'Dropout']
+)
+plt.title('Confusion Matrix — Logistic Regression (HASIL TUNING)')
+plt.xlabel('Prediction')
+plt.ylabel('Actual')
+plt.show()
+
+print(f"\n→ Mahasiswa Dropout yang LOLOS dari deteksi (False Negative) sekarang ada: {cm_tuned[1, 0]} orang")
+import joblib
+joblib.dump(best_pipeline, 'logistic_regression_tuned_result.joblib')

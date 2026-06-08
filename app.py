@@ -78,9 +78,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
-# MODEL LOADER  (tambahan: support 3 model)
-# ─────────────────────────────────────────────
 MODEL_OPTIONS = {
     "Random Forest": "random_forest_pipeline.joblib",
     "Decision Tree": "decision_tree_pipeline.joblib",
@@ -219,7 +216,7 @@ with tab_predict:
         )
         selected_models = [selected_model_name]
     with col_m2:
-        nama_mahasiswa = st.text_input("Nama Mahasiswa (opsional)", placeholder="Untuk label history...")
+        nama_mahasiswa = st.text_input("Nama Mahasiswa", placeholder="Nama...")
 
     st.markdown('<div class="section-label">Data Pribadi</div>', unsafe_allow_html=True)
     col1, col2 = st.columns(2)

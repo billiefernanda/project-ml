@@ -1,0 +1,167 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load & Clean Data
+df = pd.read_csv('Predict Student Dropout and Academic Success.csv', sep = ';')
+df.columns = df.columns.str.strip()
+
+# EDA Charts
+sns.countplot(x = 'Target', data = df)
+plt.title('Student Outcome Distribution')
+plt.show()
+sns.boxplot(x = 'Target', y = 'Curricular units 1st sem (grade)', data = df)
+plt.show()
+sns.countplot(x = 'Tuition fees up to date', hue = 'Target', data = df)
+plt.show()
+
+# Define X and Y
+y = (df['Target'] == 'Dropout').astype(int)
+X = df.drop(columns = ['Target'])
+
+# Train/Test Data Split + cat/num colls + preprocessor
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, stratify = y, random_state = 42)
+
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+
+cat_cols = ['Marital status', 'Application mode', 'Course', 'Previous qualification', 'Nacionality', "Mother's qualification",
+            "Father's qualification", "Mother's occupation", "Father's occupation", 'Daytime/evening attendance']
+num_cols = [col for col in X.columns if col not in cat_cols]
+
+preprocessor = ColumnTransformer(transformers=[('cat', OneHotEncoder(handle_unknown='ignore'), cat_cols), ('num', 'passthrough', num_cols)])
+
+# pipeline_rf + fit
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestClassifier
+
+pipeline_rf = Pipeline (steps=[('preprocessor', preprocessor), ('classifier', RandomForestClassifier(random_state=42, class_weight='balanced'))])
+
+pipeline_rf.fit(X_train, y_train)
+
+# Evaluate Untuned RF
+y_pred = pipeline_rf.predict(X_test)
+y_proba = pipeline_rf.predict_proba(X_test)[:, 1]
+
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
+
+print('Accuracy   :', accuracy_score(y_test, y_pred))
+print('Recall     :', recall_score(y_test, y_pred))
+print('Precision  :', precision_score(y_test, y_pred))
+print('F1         :', f1_score(y_test, y_pred))
+print('ROC AUC    :', roc_auc_score(y_test, y_proba))
+print('Confusion Matrix:')
+print(confusion_matrix(y_test, y_pred))
+
+# GridSearchCV(tuned RF) + Evaluate Tuned RF
+param_grid = {
+    'classifier__n_estimators': [100, 200, 300],
+    'classifier__max_depth': [None, 10, 20],
+    'classifier__min_samples_leaf': [1, 2, 5],
+    'classifier__max_features': ['sqrt']
+}
+
+from sklearn.model_selection import GridSearchCV
+gs_rf = GridSearchCV(estimator=pipeline_rf, param_grid=param_grid, scoring='roc_auc', cv=5, n_jobs=-1, refit=True)
+gs_rf.fit(X_train, y_train)
+
+print('Best Parameters:', gs_rf.best_params_)
+print('Best CV ROC-AUC:', gs_rf.best_score_)
+
+y_pred_tuned = gs_rf.best_estimator_.predict(X_test)
+y_proba_tuned = gs_rf.best_estimator_.predict_proba(X_test)[:, 1]
+print('Accuracy   :', accuracy_score(y_test, y_pred_tuned))
+print('Recall     :', recall_score(y_test, y_pred_tuned))
+print('Precision  :', precision_score(y_test, y_pred_tuned))
+print('F1         :', f1_score(y_test, y_pred_tuned))
+print('ROC AUC    :', roc_auc_score(y_test, y_proba_tuned))
+print('Confusion Matrix:')
+print(confusion_matrix(y_test, y_pred_tuned))
+
+# Threshold tuning
+threshold = 0.3
+y_pred_t =  (y_proba_tuned >= threshold).astype(int)
+print(f'Threshold: {threshold}')
+print('Accuracy   :', accuracy_score(y_test, y_pred_t) * 100)
+print('Recall     :', recall_score(y_test, y_pred_t)* 100)
+print('Precision  :', precision_score(y_test, y_pred_t)* 100)
+print('F1         :', f1_score(y_test, y_pred_t)* 100)
+print('ROC AUC    :', roc_auc_score(y_test, y_proba_tuned)* 100)
+print('Confusion Matrix:')
+print(confusion_matrix(y_test, y_pred_t))
+
+FINAL_THRESHOLD = 0.3
+
+# Pipeline_dt
+from sklearn.tree import DecisionTreeClassifier
+
+pipeline_dt = Pipeline (steps=[('preprocessor', preprocessor), ('classifier', DecisionTreeClassifier(random_state=42, class_weight='balanced'))])
+
+pipeline_dt.fit(X_train, y_train)
+
+y_pred_dt = pipeline_dt.predict(X_test)
+y_proba_dt = pipeline_dt.predict_proba(X_test)[:, 1]
+
+print('Accuracy   :', accuracy_score(y_test, y_pred_dt) * 100)
+print('Recall     :', recall_score(y_test, y_pred_dt) * 100)
+print('Precision  :', precision_score(y_test, y_pred_dt) * 100)
+print('F1         :', f1_score(y_test, y_pred_dt) * 100)
+print('ROC AUC    :', roc_auc_score(y_test, y_proba_dt) * 100)
+print('Confusion Matrix:')
+print(confusion_matrix(y_test, y_pred_dt))
+
+# Tuning pipeline_dt
+from sklearn.model_selection import GridSearchCV
+
+param_grid_dt = {
+    'classifier__max_depth': [3, 4, 5, 6, 7, 8, None],
+    'classifier__min_samples_leaf': [1, 5, 10, 20],
+    'classifier__criterion': ['gini', 'entropy']
+}
+
+gs_dt = GridSearchCV(estimator=pipeline_dt, param_grid=param_grid_dt, scoring='roc_auc', cv=5, n_jobs=-1, refit=True)
+gs_dt.fit(X_train, y_train)
+
+print('Best Parameters:', gs_dt.best_params_)
+print('Best CV ROC-AUC:', gs_dt.best_score_)
+
+y_pred_tuned_dt = gs_dt.best_estimator_.predict(X_test)
+y_proba_tuned_dt = gs_dt.best_estimator_.predict_proba(X_test)[:, 1]
+
+print('Accuracy   :', accuracy_score(y_test, y_pred_tuned_dt)* 100)
+print('Recall     :', recall_score(y_test, y_pred_tuned_dt)* 100)
+print('Precision  :', precision_score(y_test, y_pred_tuned_dt)* 100)
+print('F1         :', f1_score(y_test, y_pred_tuned_dt)* 100)
+print('ROC AUC    :', roc_auc_score(y_test, y_proba_tuned_dt)* 100)
+print('Confusion Matrix:')
+print(confusion_matrix(y_test, y_pred_tuned_dt))
+
+# Feature Importance for RF model
+feature_names = gs_rf.best_estimator_.named_steps['preprocessor'].get_feature_names_out()
+importances = gs_rf.best_estimator_.named_steps['classifier'].feature_importances_
+
+feat_series = pd.Series(importances, index=feature_names).sort_values(ascending=False).head(15)
+
+feat_series.index = feat_series.index.str.replace('num__', '').str.replace('cat__', '')
+sns.barplot(x=feat_series.values, y=feat_series.index)
+plt.title('Feature Importance')
+plt.show()
+
+# DT Flowchart
+from sklearn.tree import plot_tree
+
+plt.figure(figsize=(57, 42))
+
+plot_tree(gs_dt.best_estimator_.named_steps['classifier'], feature_names=feature_names, class_names=['Safe', 'At-Risk'], filled=True, max_depth=3, fontsize=15)
+plt.title('Decision Tree Flowchart')
+plt.show()
+
+# Save Model
+import joblib
+
+joblib.dump(gs_rf.best_estimator_, 'random_forest_pipeline.joblib')
+joblib.dump(gs_dt.best_estimator_, 'decision_tree_pipeline.joblib')
+joblib.dump({'threshold': 0.3}, 'model_metadata.joblib')

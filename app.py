@@ -197,14 +197,10 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
-# TAB: Prediksi | Riwayat
-# ─────────────────────────────────────────────
 tab_predict, tab_history = st.tabs(["Prediksi", "Riwayat Prediksi"])
 
 with tab_predict:
 
-    # ── Pemilihan Model ──────────────────────
     st.markdown('<div class="section-label">Pilih Model</div>', unsafe_allow_html=True)
     col_m1, col_m2 = st.columns([2, 1])
     with col_m1:

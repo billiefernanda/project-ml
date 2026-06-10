@@ -1,0 +1,1 @@
+link kaggle : https://www.kaggle.com/datasets/syedfaizanalii/predict-students-dropout-and-academic-success

@@ -19,7 +19,7 @@ st.markdown("""
         padding: 2rem 2rem 1.5rem 2rem;
         border-radius: 14px; color: white; text-align: center; margin-bottom: 2rem;
     }
-    .main-header h1{font-size: 4rem; margin: 0 0 0.3rem 0; font-weight: 900; letter-spacing: 2px;}
+    .main-header h1{font-size: 4rem; margin: 0 0 0.3rem 0; font-weight: 900; letter-spacing: 2px; color: #ffffff !important; text-decoration: none !important;}
     .main-header p{font-size: 0.95rem; opacity: 0.85; margin: 0;}
 
     .result-graduate {

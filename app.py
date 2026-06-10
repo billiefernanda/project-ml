@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 
 st.set_page_config(
-    page_title="Student Outcome Predictor",
+    page_title="PANDU",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
@@ -47,7 +47,6 @@ st.markdown("""
     }
     .stButton>button:hover { background: #1e40af;}
 
-    /* ── tambahan: history & model selector ── */
     .history-card {
         background: #f8fafc; border: 1px solid #e2e8f0;
         border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 0.8rem;
@@ -193,7 +192,8 @@ COURSE_DISPLAY = dict(sorted({
 
 st.markdown("""
 <div class="main-header">
-  <h1>Student Outcome Predictor</h1>
+  <h1>PANDU</h1>
+  <p>Prediksi Akademik & Navigasi Dini Universitas</p>
 </div>
 """, unsafe_allow_html=True)
 

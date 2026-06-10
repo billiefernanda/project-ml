@@ -192,7 +192,7 @@ COURSE_DISPLAY = dict(sorted({
 
 st.markdown("""
 <div class="main-header">
-  <h3>PANDU</h3>
+  <h1>PANDU</h1>
   <p>Prediksi Akademik & Navigasi Dini Universitas</p>
 </div>
 """, unsafe_allow_html=True)

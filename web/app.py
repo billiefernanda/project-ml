@@ -112,9 +112,6 @@ def load_extra_model(filename):
 
 model, THRESHOLD, VALID = load_model()
 
-dt_model = load_extra_model("decision_tree_pipeline.joblib")
-st.sidebar.write(f"DT: {dt_model.named_steps['classifier']}")
-
 NATIONALITY = dict(sorted({
     1: "Portugal",
     2: "Jerman",

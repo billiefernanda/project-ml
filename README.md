@@ -63,7 +63,7 @@ It contains student information from a higher education institution, including d
 ## Team
 
 Name 
-Billie Fernanda 
+| Billie Fernanda |
 Edrico Feliciano
 Jose Andreas Tandiono
 Felix Dickson Gilianto

@@ -85,10 +85,15 @@ MODEL_OPTIONS = {
 
 @st.cache_resource
 def load_model():
-    base = os.path.dirname(os.path.abspath(__file__))
-    mdl = joblib.load(os.path.join(base, "random_forest.joblib"))
+    base = os.path.dirname(__file__)
     meta = joblib.load(os.path.join(base, "model_metadata.joblib"))
-    pre = mdl.named_steps['preprocessor']
+    try:
+        mdl = joblib.load(os.path.join(base, "random_forest.joblib"))
+        pre = mdl.named_steps['preprocessor']
+    except Exception:
+        mdl = joblib.load(os.path.join(base, "decision_tree_pipeline.joblib"))
+        pre = mdl.named_steps['preprocessor']
+
     ohe = pre.named_transformers_['cat']
     valid = {
         'nationality': [int(x) for x in ohe.categories_[3]],

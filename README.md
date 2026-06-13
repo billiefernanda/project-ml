@@ -63,7 +63,7 @@ It contains student information from a higher education institution, including d
 ## Team
 
 
-Billie Fernanda
-Edrico Feliciano
-Jose Andreas Tandiono
-Felix Dickson Gilianto
+- Billie Fernanda
+- Edrico Feliciano
+- Jose Andreas Tandiono
+- Felix Dickson Gilianto

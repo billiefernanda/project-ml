@@ -111,7 +111,9 @@ def load_extra_model(filename):
 
 
 model, THRESHOLD, VALID = load_model()
-
+import sklearn
+st.sidebar.write(f"sklearn version: {sklearn.__version__}")
+st.sidebar.write(f"RF: {model.named_steps['classifier']}")
 NATIONALITY = dict(sorted({
     1: "Portugal",
     2: "Jerman",

@@ -435,4 +435,3 @@ with tab_history:
               </div>
             </div>
             """, unsafe_allow_html=True)
-st.write(f"DEBUG {model_name} - proba: {proba}, threshold: {THRESHOLD}")

@@ -85,20 +85,33 @@ MODEL_OPTIONS = {
 
 @st.cache_resource
 def load_model():
-    base = os.path.dirname(__file__)
-    mdl = joblib.load(os.path.join(base, "random_forest.joblib"))
-    meta = joblib.load(os.path.join(base, "model_metadata.joblib"))
-    pre = mdl.named_steps['preprocessor']
-    ohe = pre.named_transformers_['cat']
-    valid = {
-        'nationality': [int(x) for x in ohe.categories_[3]],
-        'course': [int(x) for x in ohe.categories_[2]],
-    }
+    base = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(base, "random_forest_pipeline.joblib")
+    if not os.path.exists(model_path):
+        model_path = os.path.join(base, "random_forest.joblib")
+        
+    mdl = joblib.load(model_path)
+    meta_path = os.path.join(base, "model_metadata.joblib")
+    meta = joblib.load(meta_path) if os.path.exists(meta_path) else {}
+    
+    try:
+        if hasattr(mdl, 'named_steps') and 'preprocessor' in mdl.named_steps:
+            pre = mdl.named_steps['preprocessor']
+            ohe = pre.named_transformers_['cat']
+            valid = {
+                'nationality': [int(x) for x in ohe.categories_[3]],
+                'course': [int(x) for x in ohe.categories_[2]],
+            }
+        else:
+            valid = {'nationality': [], 'course': []}
+    except Exception:
+        valid = {'nationality': [], 'course': []}
+        
     return mdl, meta.get("threshold", 0.3), valid
 
 @st.cache_resource
 def load_extra_model(filename):
-    base = os.path.dirname(__file__)
+    base = os.path.dirname(os.path.abspath(__file__))
     path = os.path.join(base, filename)
     if os.path.exists(path):
         return joblib.load(path)

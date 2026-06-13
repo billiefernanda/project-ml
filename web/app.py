@@ -111,9 +111,7 @@ def load_extra_model(filename):
 
 
 model, THRESHOLD, VALID = load_model()
-import sklearn
-st.sidebar.write(f"sklearn version: {sklearn.__version__}")
-st.sidebar.write(f"RF: {model.named_steps['classifier']}")
+
 NATIONALITY = dict(sorted({
     1: "Portugal",
     2: "Jerman",
@@ -329,6 +327,9 @@ with tab_predict:
                 expected_cols = list(mdl_used.feature_names_in_)
                 input_aligned = input_data[expected_cols]
                 proba = mdl_used.predict_proba(input_aligned)[0]
+
+                st.write(f"DEBUG {model_name} - proba: {proba}, threshold: {THRESHOLD}")
+                
                 prob_graduate = proba[0]
                 prob_dropout = proba[1]
                 prediction = "graduate" if prob_dropout < THRESHOLD else "dropout"

@@ -85,7 +85,7 @@ MODEL_OPTIONS = {
 
 @st.cache_resource
 def load_model():
-    base = os.path.dirname(__file__)
+    base = os.path.dirname(os.path.abspath(__file__))
     mdl = joblib.load(os.path.join(base, "random_forest.joblib"))
     meta = joblib.load(os.path.join(base, "model_metadata.joblib"))
     pre = mdl.named_steps['preprocessor']

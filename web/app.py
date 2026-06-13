@@ -86,7 +86,7 @@ MODEL_OPTIONS = {
 @st.cache_resource
 def load_model():
     base = os.path.dirname(__file__)
-    mdl = joblib.load(os.path.join(base, "random_forest.joblib"))
+    mdl = joblib.load(os.path.join(base, "random_forest_pipeline.joblib"))
     meta = joblib.load(os.path.join(base, "model_metadata.joblib"))
     pre = mdl.named_steps['preprocessor']
     ohe = pre.named_transformers_['cat']
@@ -95,7 +95,7 @@ def load_model():
         'course': [int(x) for x in ohe.categories_[2]],
     }
     return mdl, meta.get("threshold", 0.3), valid
-
+    
 @st.cache_resource
 def load_extra_model(filename):
     base = os.path.dirname(__file__)

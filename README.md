@@ -62,9 +62,8 @@ It contains student information from a higher education institution, including d
 
 ## Team
 
-| Name | GitHub |
-|---|---|
-| Billie Fernanda | [@billiefernanda](https://github.com/billiefernanda) |
-| Edrico Felician | — |
-| Jose Andreas Tandiono | — |
-| Felix Dickson Gilianto | — |
+Name 
+Billie Fernanda 
+Edrico Feliciano
+Jose Andreas Tandiono
+Felix Dickson Gilianto

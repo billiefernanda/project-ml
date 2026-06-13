@@ -326,10 +326,7 @@ with tab_predict:
             try:
                 expected_cols = list(mdl_used.feature_names_in_)
                 input_aligned = input_data[expected_cols]
-                proba = mdl_used.predict_proba(input_aligned)[0]
-
-                st.write(f"DEBUG {model_name} - proba: {proba}, threshold: {THRESHOLD}")
-                
+                proba = mdl_used.predict_proba(input_aligned)[0]                
                 prob_graduate = proba[0]
                 prob_dropout = proba[1]
                 prediction = "graduate" if prob_dropout < THRESHOLD else "dropout"
